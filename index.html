@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mosswood — a little life in the woods</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app-shell">
+  <header class="topbar">
+    <a class="brand" href="#" aria-label="Mosswood home"><span class="brand-mark">✿</span><span>MOSSWOOD<small>A LITTLE LIFE IN THE WOODS</small></span></a>
+    <div class="weather"><span class="sun">☼</span><span><b>Late spring</b><small>Day <i id="dayNum">03</i> · 18°C · clear skies</small></span></div>
+    <div class="top-right"><div class="wallet">✦ <b id="points">120</b><small>DEW DROPS</small></div><button class="icon-btn" id="soundBtn" title="Toggle ambience">♫</button><button class="avatar" title="Your cabin">M</button></div>
+  </header>
+  <main class="layout">
+    <nav class="rail" aria-label="Game locations">
+      <button class="rail-btn active" data-place="cabin"><span>⌂</span><small>HOME</small></button>
+      <button class="rail-btn" data-place="garden"><span>♧</span><small>GARDEN</small></button>
+      <button class="rail-btn" data-place="woods"><span>♠</span><small>WOODS</small></button>
+      <button class="rail-btn" data-place="market"><span>▤</span><small>MARKET</small></button>
+      <div class="rail-spacer"></div><button class="rail-btn" id="helpBtn"><span>?</span><small>HOW TO</small></button>
+    </nav>
+    <section class="world-column">
+      <div class="scene-head"><div><div class="eyebrow" id="sceneEyebrow">YOUR LITTLE CORNER OF THE WORLD</div><h1 id="sceneTitle">The cabin</h1></div><div class="time-chip"><span class="pulse"></span><span id="clock">9:24 AM</span><span class="divider">|</span><span>☼</span></div></div>
+      <div class="scene-wrap"><canvas id="scene" width="640" height="360" aria-label="Pixel art woodland cabin"></canvas><div class="scene-badge"><span>⌖</span> <span id="sceneCaption">EVERYTHING FEELS A LITTLE SLOWER HERE</span></div><div class="scene-hint" id="sceneHint">CLICK A SPOT TO EXPLORE</div></div>
+      <div class="scene-toolbar"><div class="location-label"><span class="tiny-leaf">✿</span><span id="locationText">PINECONE CABIN <small>YOUR HOME, SWEET HOME</small></span></div><div class="toolbar-actions" id="quickActions"></div></div>
+      <div class="activity-card"><div class="activity-icon" id="activityIcon">☕</div><div class="activity-copy"><b id="activityTitle">A slow morning</b><span id="activityText">The kettle is warm and Juniper is keeping you company.</span></div><button class="text-action" id="activityBtn">SEE WHAT'S ON <span>↗</span></button></div>
+    </section>
+    <aside class="side-panel">
+      <div class="side-heading"><div><div class="eyebrow">YOUR LITTLE ROUTINE</div><h2>Today</h2></div><span class="streak">✧ <span id="streak">3</span> day streak</span></div>
+      <div class="energy-card"><div class="energy-top"><span>☀ YOUR ENERGY</span><b id="energyText">6 / 6</b></div><div class="energy-track"><span id="energyFill"></span></div><div class="energy-note">Take it at your own pace. Rest is productive, too.</div></div>
+      <div class="tasks-head"><b>Little things to do</b><span id="taskCount">0 / 3</span></div><div class="task-list" id="taskList"></div>
+      <div class="cat-card"><div class="cat-card-head"><span>YOUR COMPANION</span><button class="dots" id="catMore" aria-label="Cat options">···</button></div><div class="cat-profile"><div class="cat-portrait" id="catPortrait"><span>🐈</span><i>♥</i></div><div class="cat-info"><b id="catName">Juniper</b><small id="catMood">sleepy · a little nosy</small><div class="heart-row" id="hearts">♥ ♥ ♥ ♡ ♡</div></div></div><div class="cat-quote" id="catQuote">“That mug looks suspiciously warm. I will investigate.”</div><div class="cat-actions"><button data-action="feed">♡ Feed</button><button data-action="play">✳ Play</button><button data-action="pet">✿ Cuddle</button></div></div>
+      <div class="inventory-strip"><span>IN YOUR POCKETS</span><div id="inventory"></div></div>
+    </aside>
+  </main>
+  <footer class="footer"><span>✿ A SOFTER SORT OF DAY</span><span>YOUR PROGRESS SAVES AUTOMATICALLY <b>·</b> <button id="resetBtn">START A NEW SAVE</button></span><span>VER. 0.3.18</span></footer>
+</div>
+<div class="toast" id="toast" role="status"></div><div id="modalRoot"></div>
+<script src="game.js"></script>
+</body></html>
