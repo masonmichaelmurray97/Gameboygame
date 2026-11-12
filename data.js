@@ -119,14 +119,14 @@ const stock = {
     ['🌰', 'Seed packet', 'A surprise mix for your beds.', 10, { Seeds: 4 }],
     ['🍪', 'Salmon treats', 'A tiny treat for a very good cat.', 12, { Treats: 2 }],
     ['🐭', 'Catnip mouse', 'A crinkly little toy for an energetic friend.', 18, { Toys: 1 }],
-    ['🌱', 'Catnip seeds', 'For a happy garden cat.', 10, { Catnip: 2 }],
+    ['🌱', 'Catnip seeds', 'For a happy garden cat.', 10, { Seeds: 2 }],
     ['🍿', 'Popcorn kit', 'A paper bag of kernels and silly amounts of butter.', 8, { Popcorn: 2 }]
   ],
   plants: [
     ['🌿', 'Herb seed tin', 'Mint, basil, thyme, sage & friends.', 14, { Seeds: 6 }],
     ['🥕', 'Veggie seed tin', 'Roots, greens, and something for the stew pot.', 14, { Seeds: 6 }],
     ['🍓', 'Fruit seed tin', 'Berries, melons, and other sweet ambitions.', 16, { Seeds: 6 }],
-    ['🌱', 'Catnip packet', 'A garden luxury for your companion.', 10, { Catnip: 2 }],
+    ['🌱', 'Catnip packet', 'A garden luxury for your companion.', 10, { Seeds: 2 }],
     ['🌰', 'Heirloom seed box', 'A generous box of this season’s best.', 26, { Seeds: 12 }]
   ],
   home: [

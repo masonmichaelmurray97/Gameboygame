@@ -239,7 +239,7 @@ function shop(type) {
         save();
       }
     };
-  }), 'The market restocks every morning · dew drops are earned by being here.');
+  }), 'A thoughtfully stocked little market, ready whenever you stop by.');
 }
 
 function fire() {
