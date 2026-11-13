@@ -145,6 +145,7 @@ function drawScene(t) {
   else if (game.place === 'woods') drawWoods(t);
   else if (game.place === 'market') drawMarket(t);
   else drawBackyard(t);
+  drawWorldGates();
   drawCompanion(t);
   const p = playerPosition();
   drawPlayer(p, t);

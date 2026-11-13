@@ -42,8 +42,91 @@ const sceneObstacles = {
 };
 const cameraByPlace = {};
 const CAMERA_ZOOM = 1.08;
-const movementStick = { x: 0, y: 0, active: false };
-const cameraStick = { x: 0, y: 0, active: false };
+const movementStick = { x: 0, y: 0, active: false, pointerButton: null };
+const worldRoutes = {
+  cabin: { east: 'garden' },
+  garden: { west: 'cabin', east: 'woods' },
+  woods: { west: 'garden', east: 'market' },
+  market: { west: 'woods', east: 'backyard' },
+  backyard: { west: 'market' }
+};
+let blockedExit = null;
+
+function drawWorldGates() {
+  const routes = worldRoutes[game.place] || {};
+  for (const [side, destination] of Object.entries(routes)) {
+    const x = side === 'west' ? 3 : W - 35;
+    ctx.globalAlpha = 0.88;
+    r(x, 326, 32, 30, '#d7c89a');
+    r(x + 4, 330, 24, 22, '#eadfb8');
+    r(x + 8, 334, 16, 14, '#78956e');
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = '#fff8dc';
+    ctx.strokeStyle = '#536b4c';
+    ctx.lineWidth = 2;
+    ctx.font = 'bold 12px monospace';
+    ctx.textAlign = 'center';
+    ctx.strokeText(side === 'west' ? '‹' : '›', x + 16, 345);
+    ctx.fillText(side === 'west' ? '‹' : '›', x + 16, 345);
+    ctx.font = 'bold 7px monospace';
+    ctx.fillStyle = '#fff8dc';
+    ctx.strokeStyle = '#405744';
+    ctx.lineWidth = 2;
+    ctx.strokeText(destination.toUpperCase(), x + 16, 320);
+    ctx.fillText(destination.toUpperCase(), x + 16, 320);
+  }
+  ctx.textAlign = 'start';
+}
+
+function enterThrough(side, destination) {
+  setMovement(0, 0);
+  movementStick.source = null;
+  movementStick.pointerButton = null;
+  go(destination);
+  const p = playerPosition();
+  p.x = side === 'east' ? 34 : 606;
+  p.y = Math.max(326, Math.min(350, p.y));
+  delete p.tx;
+  delete p.ty;
+  delete p.auto;
+  p.walking = false;
+  save();
+  toast(`A little trail leads into ${destination}.`);
+}
+
+function tryEnterWorldRoute() {
+  const p = playerPosition();
+  if (p.y < 318) return false;
+  const side = p.x <= 8 ? 'west' : p.x >= W - 8 ? 'east' : null;
+  const destination = side && worldRoutes[game.place]?.[side];
+  if (destination) {
+    enterThrough(side, destination);
+    return true;
+  }
+  if (side) p.x = side === 'west' ? 8 : W - 8;
+  return false;
+}
+
+function setMovement(x, y, source = null) {
+  movementStick.x = x;
+  movementStick.y = y;
+  movementStick.active = !!(x || y);
+  movementStick.source = source;
+  if (movementStick.active) {
+    const p = playerPosition();
+    delete p.tx;
+    delete p.ty;
+    delete p.auto;
+  }
+}
+
+function nudgePlayer(dx, dy, distance = 48) {
+  const p = playerPosition();
+  const bounds = walkBounds[game.place] || { minY: 20, maxY: 350 };
+  p.tx = Math.max(0, Math.min(W, p.x + dx * distance));
+  p.ty = Math.max(bounds.minY, Math.min(bounds.maxY, p.y + dy * distance));
+  p.auto = false;
+}
 const sceneObjects = {
   cabin: [
     { x: 78, y: 248, name: 'Kitchen stove', run: () => cook() },
@@ -91,7 +174,7 @@ function playerPosition() {
 function moveTo(x, y, auto = false) {
   const p = playerPosition();
   const b = walkBounds[game.place] || { minY: 20, maxY: 350 };
-  p.tx = Math.max(18, Math.min(622, x));
+  p.tx = Math.max(0, Math.min(W, x));
   p.ty = Math.max(b.minY, Math.min(b.maxY, y));
   p.auto = auto;
 }
@@ -110,6 +193,17 @@ function interact() {
 
 function tickWalk(dt) {
   const p = playerPosition();
+  if (movementStick.active) {
+    const length = Math.hypot(movementStick.x, movementStick.y) || 1;
+    const speed = 0.14 * dt;
+    const bounds = walkBounds[game.place] || { minY: 20, maxY: 350 };
+    p.x = Math.max(0, Math.min(W, p.x + movementStick.x / length * speed));
+    p.y = Math.max(bounds.minY, Math.min(bounds.maxY, p.y + movementStick.y / length * speed));
+    p.walking = true;
+    if (movementStick.x) p.face = movementStick.x < 0 ? -1 : 1;
+    if (tryEnterWorldRoute()) return;
+    return;
+  }
   if (p.tx == null) { p.walking = false; return; }
   const dx = p.tx - p.x, dy = p.ty - p.y;
   const d = Math.hypot(dx, dy);
@@ -118,6 +212,7 @@ function tickWalk(dt) {
     p.x = p.tx; p.y = p.ty;
     delete p.tx; delete p.ty;
     p.walking = false;
+    if (tryEnterWorldRoute()) return;
     if (p.auto) { delete p.auto; interact(); }
     save();
     return;
@@ -126,6 +221,7 @@ function tickWalk(dt) {
   p.y += dy / d * step;
   p.walking = true;
   if (Math.abs(dx) > 1) p.face = dx < 0 ? -1 : 1;
+  tryEnterWorldRoute();
 }
 
 function act(actionLabel) {
@@ -208,12 +304,8 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') { closeModal(); return; }
   if (moveKeys[e.key]) {
     e.preventDefault();
-    const p = playerPosition();
     const v = moveKeys[e.key];
-    const nx = Math.max(18, Math.min(622, (p.tx ?? p.x) + v[0] * 38));
-    const b = walkBounds[game.place] || { minY: 20, maxY: 350 };
-    const ny = Math.max(b.minY, Math.min(b.maxY, (p.ty ?? p.y) + v[1] * 38));
-    p.tx = nx; p.ty = ny; p.auto = false;
+    setMovement(v[0], v[1], e.key);
   } else if (e.key.toLowerCase() === 'e') {
     e.preventDefault();
     interact();
@@ -221,6 +313,10 @@ document.addEventListener('keydown', e => {
     rest();
   }
 });
+document.addEventListener('keyup', e => {
+  if (movementStick.source === e.key) setMovement(0, 0);
+});
+window.addEventListener('blur', () => setMovement(0, 0));
 
 function addTouchPad() {
   const wrap = $('.scene-wrap');
@@ -234,13 +330,27 @@ function addTouchPad() {
     b.type = 'button';
     b.textContent = txt;
     b.setAttribute('aria-label', `Walk ${txt}`);
-    b.onclick = () => {
-      const p = playerPosition();
-      const bnd = walkBounds[game.place] || { minY: 20, maxY: 350 };
-      p.tx = Math.max(18, Math.min(622, p.x + dx * 54));
-      p.ty = Math.max(bnd.minY, Math.min(bnd.maxY, p.y + dy * 54));
-      p.auto = false;
+    let pressedAt = 0;
+    const stop = e => {
+      if (movementStick.pointerButton !== b) return;
+      setMovement(0, 0);
+      movementStick.pointerButton = null;
+      if (performance.now() - pressedAt < 180) nudgePlayer(dx, dy, 48);
+      if (e && b.hasPointerCapture?.(e.pointerId)) b.releasePointerCapture(e.pointerId);
     };
+    b.addEventListener('pointerdown', e => {
+      e.preventDefault();
+      pressedAt = performance.now();
+      movementStick.pointerButton = b;
+      b.setPointerCapture?.(e.pointerId);
+      setMovement(dx, dy, b);
+    });
+    b.addEventListener('pointerup', stop);
+    b.addEventListener('pointercancel', stop);
+    b.addEventListener('lostpointercapture', stop);
+    b.addEventListener('click', e => {
+      if (e.detail === 0) nudgePlayer(dx, dy, 48);
+    });
     pad.append(b);
   });
   const use = document.createElement('button');
