@@ -291,10 +291,10 @@ canvas.addEventListener('dblclick', () => {
 });
 
 const moveKeys = {
-  ArrowUp: [0, -1], w: [0, -1], W: [0, -1],
-  ArrowDown: [0, 1], s: [0, 1], S: [0, 1],
-  ArrowLeft: [-1, 0], a: [-1, 0], A: [-1, 0],
-  ArrowRight: [1, 0], d: [1, 0], D: [1, 0]
+  w: [0, -1], W: [0, -1],
+  s: [0, 1], S: [0, 1],
+  a: [-1, 0], A: [-1, 0],
+  d: [1, 0], D: [1, 0]
 };
 document.addEventListener('keydown', e => {
   if ($('#modalRoot').innerHTML) {
@@ -321,44 +321,65 @@ window.addEventListener('blur', () => setMovement(0, 0));
 function addTouchPad() {
   const wrap = $('.scene-wrap');
   if (!wrap || $('#walkPad')) return;
+
   const pad = document.createElement('div');
   pad.id = 'walkPad';
   pad.className = 'walk-pad';
-  pad.setAttribute('aria-label', 'Movement controls');
-  [['↑', 0, -1], ['←', -1, 0], ['↓', 0, 1], ['→', 1, 0]].forEach(([txt, dx, dy]) => {
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.textContent = txt;
-    b.setAttribute('aria-label', `Walk ${txt}`);
-    let pressedAt = 0;
-    const stop = e => {
-      if (movementStick.pointerButton !== b) return;
-      setMovement(0, 0);
-      movementStick.pointerButton = null;
-      if (performance.now() - pressedAt < 180) nudgePlayer(dx, dy, 48);
-      if (e && b.hasPointerCapture?.(e.pointerId)) b.releasePointerCapture(e.pointerId);
-    };
-    b.addEventListener('pointerdown', e => {
-      e.preventDefault();
-      pressedAt = performance.now();
-      movementStick.pointerButton = b;
-      b.setPointerCapture?.(e.pointerId);
-      setMovement(dx, dy, b);
-    });
-    b.addEventListener('pointerup', stop);
-    b.addEventListener('pointercancel', stop);
-    b.addEventListener('lostpointercapture', stop);
-    b.addEventListener('click', e => {
-      if (e.detail === 0) nudgePlayer(dx, dy, 48);
-    });
-    pad.append(b);
+  pad.setAttribute('role', 'group');
+  pad.setAttribute('aria-label', 'Joystick movement controls');
+
+  const stick = document.createElement('div');
+  stick.className = 'joystick';
+  stick.setAttribute('role', 'application');
+  stick.setAttribute('aria-label', 'Move with the joystick');
+  stick.tabIndex = 0;
+  const thumb = document.createElement('span');
+  thumb.className = 'joystick-thumb';
+  stick.append(thumb);
+
+  const setStickFromPointer = e => {
+    const rect = stick.getBoundingClientRect();
+    const radius = Math.max(1, rect.width * 0.34);
+    const dx = e.clientX - (rect.left + rect.width / 2);
+    const dy = e.clientY - (rect.top + rect.height / 2);
+    const distance = Math.hypot(dx, dy);
+    const scale = distance > radius ? radius / distance : 1;
+    const x = dx * scale;
+    const y = dy * scale;
+    thumb.style.transform = `translate(${x}px, ${y}px)`;
+    const magnitude = Math.hypot(x, y) / radius;
+    if (magnitude < 0.12) setMovement(0, 0, stick);
+    else setMovement(x / radius, y / radius, stick);
+  };
+  const releaseStick = e => {
+    if (movementStick.pointerButton !== stick) return;
+    setMovement(0, 0);
+    movementStick.pointerButton = null;
+    thumb.style.transform = '';
+    if (e && stick.hasPointerCapture?.(e.pointerId)) stick.releasePointerCapture(e.pointerId);
+  };
+  stick.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    movementStick.pointerButton = stick;
+    stick.setPointerCapture?.(e.pointerId);
+    setStickFromPointer(e);
   });
+  stick.addEventListener('pointermove', e => {
+    if (movementStick.pointerButton !== stick) return;
+    e.preventDefault();
+    setStickFromPointer(e);
+  });
+  stick.addEventListener('pointerup', releaseStick);
+  stick.addEventListener('pointercancel', releaseStick);
+  stick.addEventListener('lostpointercapture', releaseStick);
+
   const use = document.createElement('button');
+  use.type = 'button';
   use.className = 'walk-use';
-  use.textContent = 'E';
-  use.title = 'Interact nearby';
+  use.innerHTML = '<span>✦</span><small>INTERACT</small>';
+  use.setAttribute('aria-label', 'Interact with the nearest spot');
   use.onclick = interact;
-  pad.append(use);
+  pad.append(stick, use);
   wrap.append(pad);
 }
 
