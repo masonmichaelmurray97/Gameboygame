@@ -359,7 +359,7 @@ function addTouchPad() {
   use.title = 'Interact nearby';
   use.onclick = interact;
   pad.append(use);
-  wrap.append(pad);
+  wrap.insertAdjacentElement('afterend', pad);
 }
 
 /* ----------------------------- side panel & menus ----------------------------- */
