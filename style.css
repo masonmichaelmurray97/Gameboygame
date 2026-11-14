@@ -55,3 +55,22 @@
 .journal-lists p{font-size:10px;line-height:1.45;color:#929b8d;margin:0}
 @media(max-width:700px){.modal.wide{width:100%}.journal-grid{grid-template-columns:1fr 1fr}.journal-lists{grid-template-columns:1fr}.dvd-grid,.seed-grid{grid-template-columns:1fr 1fr}.seed-status{width:100%;margin:2px 0 0}.dvd-card{padding:6px}.dvd-copy small{display:none}.seed-copy em{display:none}}
 @media(max-width:470px){.dvd-grid,.seed-grid{grid-template-columns:1fr}.dvd-copy small{display:block}}
+
+/* Analog movement control */
+.joystick-controls{display:flex;align-items:center;gap:18px;min-height:112px;padding:9px 14px 10px 12px;color:#788773}
+.joystick-group{display:flex;align-items:center;gap:11px}
+.joystick-label,.joystick-tip{font:8px var(--pixel);letter-spacing:.8px;color:#97a18f}
+.joystick{--stick-x:0px;--stick-y:0px;position:relative;display:block;width:88px;height:88px;flex:none;padding:0;border:1px solid #d5ddc8;border-radius:50%;background:radial-gradient(circle at 50% 43%,#fdfcf3 0 42%,#edf0e3 43% 72%,#dfe5d5 73% 100%);box-shadow:inset 0 2px 6px #66785a18,0 3px 7px #445d3a15;touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab}
+.joystick::before{content:'↑\A ←   →\A ↓';white-space:pre;position:absolute;inset:0;display:grid;place-content:center;text-align:center;color:#a8b39c;font:8px/18px var(--pixel);pointer-events:none}
+.joystick::after{content:'';position:absolute;inset:9px;border:1px dashed #d4ddc9;border-radius:50%;pointer-events:none}
+.joystick.is-active{cursor:grabbing}
+.joystick:focus-visible,.walk-use:focus-visible{outline:3px solid #adbd91;outline-offset:3px}
+.joystick-knob{position:absolute;z-index:1;left:50%;top:50%;width:38px;height:38px;transform:translate(calc(-50% + var(--stick-x)),calc(-50% + var(--stick-y)));border:1px solid #5c795f;border-radius:50%;background:radial-gradient(circle at 35% 28%,#a7bd91,#779373 72%);box-shadow:0 3px 7px #3a523b55,inset 0 1px 1px #ffffff80;transition:box-shadow .12s;pointer-events:none}
+.joystick-knob::after{content:'✦';position:absolute;inset:0;display:grid;place-items:center;color:#f8f6e8;font-size:13px;text-shadow:0 1px 2px #50685080}
+.joystick.is-active .joystick-knob{box-shadow:0 4px 9px #3a523b66,inset 0 1px 1px #ffffff80}
+.walk-use{display:flex;align-items:center;gap:8px;min-height:40px;padding:0 15px;border:1px solid #dce4d4;border-radius:999px;background:#fffef8;color:#627d62;font:8px var(--pixel);letter-spacing:.5px;cursor:pointer;box-shadow:0 2px 5px #52684b0c;transition:background .15s,transform .15s}
+.walk-use:hover{background:#edf2e6;transform:translateY(-1px)}
+.walk-use-icon{font-size:14px;color:#93a77a}
+.visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media(max-width:700px){.joystick-controls{min-height:100px;padding:8px 10px;gap:13px}.joystick-group{gap:8px}.joystick{width:80px;height:80px}.joystick-label,.joystick-tip{font-size:7px}.walk-use{padding:0 11px}}
+@media(max-width:470px){.joystick-controls{flex-wrap:wrap;min-height:0;padding:9px 8px;gap:8px 13px}.joystick-group{width:100%;justify-content:space-between}.joystick{width:76px;height:76px}.joystick-tip{display:none}}

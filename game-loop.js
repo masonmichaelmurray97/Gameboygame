@@ -42,7 +42,7 @@ const sceneObstacles = {
 };
 const cameraByPlace = {};
 const CAMERA_ZOOM = 1.08;
-const movementStick = { x: 0, y: 0, active: false, pointerButton: null };
+const movementStick = { x: 0, y: 0, active: false };
 const worldRoutes = {
   cabin: { east: 'garden' },
   garden: { west: 'cabin', east: 'woods' },
@@ -81,7 +81,6 @@ function drawWorldGates() {
 function enterThrough(side, destination) {
   setMovement(0, 0);
   movementStick.source = null;
-  movementStick.pointerButton = null;
   go(destination);
   const p = playerPosition();
   p.x = side === 'east' ? 34 : 606;
@@ -120,13 +119,6 @@ function setMovement(x, y, source = null) {
   }
 }
 
-function nudgePlayer(dx, dy, distance = 48) {
-  const p = playerPosition();
-  const bounds = walkBounds[game.place] || { minY: 20, maxY: 350 };
-  p.tx = Math.max(0, Math.min(W, p.x + dx * distance));
-  p.ty = Math.max(bounds.minY, Math.min(bounds.maxY, p.y + dy * distance));
-  p.auto = false;
-}
 const sceneObjects = {
   cabin: [
     { x: 78, y: 248, name: 'Kitchen stove', run: () => cook() },
@@ -195,7 +187,7 @@ function tickWalk(dt) {
   const p = playerPosition();
   if (movementStick.active) {
     const length = Math.hypot(movementStick.x, movementStick.y) || 1;
-    const speed = 0.14 * dt;
+    const speed = 0.14 * dt * Math.min(1, length);
     const bounds = walkBounds[game.place] || { minY: 20, maxY: 350 };
     p.x = Math.max(0, Math.min(W, p.x + movementStick.x / length * speed));
     p.y = Math.max(bounds.minY, Math.min(bounds.maxY, p.y + movementStick.y / length * speed));
@@ -321,45 +313,89 @@ window.addEventListener('blur', () => setMovement(0, 0));
 function addTouchPad() {
   const wrap = $('.scene-wrap');
   if (!wrap || $('#walkPad')) return;
-  const pad = document.createElement('div');
-  pad.id = 'walkPad';
-  pad.className = 'walk-pad';
-  pad.setAttribute('aria-label', 'Movement controls');
-  [['↑', 0, -1], ['←', -1, 0], ['↓', 0, 1], ['→', 1, 0]].forEach(([txt, dx, dy]) => {
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.textContent = txt;
-    b.setAttribute('aria-label', `Walk ${txt}`);
-    let pressedAt = 0;
-    const stop = e => {
-      if (movementStick.pointerButton !== b) return;
-      setMovement(0, 0);
-      movementStick.pointerButton = null;
-      if (performance.now() - pressedAt < 180) nudgePlayer(dx, dy, 48);
-      if (e && b.hasPointerCapture?.(e.pointerId)) b.releasePointerCapture(e.pointerId);
-    };
-    b.addEventListener('pointerdown', e => {
-      e.preventDefault();
-      pressedAt = performance.now();
-      movementStick.pointerButton = b;
-      b.setPointerCapture?.(e.pointerId);
-      setMovement(dx, dy, b);
-    });
-    b.addEventListener('pointerup', stop);
-    b.addEventListener('pointercancel', stop);
-    b.addEventListener('lostpointercapture', stop);
-    b.addEventListener('click', e => {
-      if (e.detail === 0) nudgePlayer(dx, dy, 48);
-    });
-    pad.append(b);
-  });
+
+  const controls = document.createElement('div');
+  controls.id = 'walkPad';
+  controls.className = 'joystick-controls';
+
+  const group = document.createElement('div');
+  group.className = 'joystick-group';
+  const label = document.createElement('span');
+  label.className = 'joystick-label';
+  label.textContent = 'DRAG TO WALK';
+
+  const pad = document.createElement('button');
+  pad.type = 'button';
+  pad.className = 'joystick';
+  pad.setAttribute('aria-label', 'Movement joystick. Drag in any direction to walk.');
+  pad.setAttribute('aria-describedby', 'joystickHelp');
+  const knob = document.createElement('span');
+  knob.className = 'joystick-knob';
+  pad.append(knob);
+  group.append(label, pad);
+
+  const help = document.createElement('span');
+  help.id = 'joystickHelp';
+  help.className = 'visually-hidden';
+  help.textContent = 'You can also move with the arrow keys or WASD.';
+  group.append(help);
+
   const use = document.createElement('button');
+  use.type = 'button';
   use.className = 'walk-use';
-  use.textContent = 'E';
-  use.title = 'Interact nearby';
-  use.onclick = interact;
-  pad.append(use);
-  wrap.insertAdjacentElement('afterend', pad);
+  use.innerHTML = '<span class="walk-use-icon">✦</span><span>INTERACT</span>';
+  use.setAttribute('aria-label', 'Interact with the nearest spot');
+  use.addEventListener('click', interact);
+  const tip = document.createElement('span');
+  tip.className = 'joystick-tip';
+  tip.textContent = 'MOVE WITH ARROWS / WASD';
+  controls.append(group, use, tip);
+
+  let activePointer = null;
+  const moveStick = e => {
+    if (activePointer !== e.pointerId) return;
+    const rect = pad.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const maxTravel = Math.max(1, rect.width * 0.32);
+    let dx = e.clientX - centerX;
+    let dy = e.clientY - centerY;
+    const distance = Math.hypot(dx, dy);
+    if (distance > maxTravel) {
+      dx = dx / distance * maxTravel;
+      dy = dy / distance * maxTravel;
+    }
+    const x = dx / maxTravel;
+    const y = dy / maxTravel;
+    pad.style.setProperty('--stick-x', `${dx}px`);
+    pad.style.setProperty('--stick-y', `${dy}px`);
+    setMovement(x, y, pad);
+  };
+  const centerStick = e => {
+    if (e && activePointer !== e.pointerId) return;
+    setMovement(0, 0);
+    activePointer = null;
+    pad.style.setProperty('--stick-x', '0px');
+    pad.style.setProperty('--stick-y', '0px');
+    pad.classList.remove('is-active');
+    if (e && pad.hasPointerCapture?.(e.pointerId)) pad.releasePointerCapture(e.pointerId);
+  };
+
+  pad.addEventListener('pointerdown', e => {
+    if (activePointer !== null) return;
+    e.preventDefault();
+    activePointer = e.pointerId;
+    pad.classList.add('is-active');
+    pad.setPointerCapture?.(e.pointerId);
+    moveStick(e);
+  });
+  pad.addEventListener('pointermove', moveStick);
+  pad.addEventListener('pointerup', centerStick);
+  pad.addEventListener('pointercancel', centerStick);
+  pad.addEventListener('lostpointercapture', centerStick);
+  pad.addEventListener('click', e => e.preventDefault());
+
+  wrap.insertAdjacentElement('afterend', controls);
 }
 
 /* ----------------------------- side panel & menus ----------------------------- */

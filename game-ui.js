@@ -141,7 +141,7 @@ function renderUI() {
   $('#sceneCaption').textContent = l[4];
   $('#sceneHint').textContent = game.energy === 0 && game.place === 'cabin'
     ? 'YOU DESERVE A REST · PRESS R OR CLICK REST'
-    : 'WASD / ARROWS OR HOLD THE WALK PAD · E TO INTERACT · FOLLOW THE EDGE GATES';
+    : 'DRAG JOYSTICK · CLICK TO MOVE · E TO INTERACT · FOLLOW EDGE GATES';
   $('#clock').textContent = `${String(game.time).padStart(2, '0')}:24 ${game.time < 12 ? 'AM' : 'PM'}`;
   const season = getSeason(), weather = getWeather();
   const temp = [17, 23, 12, 3][['Spring', 'Summer', 'Autumn', 'Winter'].indexOf(season)];
