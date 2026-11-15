@@ -271,8 +271,16 @@ $('#taskList').addEventListener('click', e => {
 canvas.addEventListener('click', e => {
   if ($('#modalRoot').innerHTML) return;
   const r = canvas.getBoundingClientRect();
-  const x = (e.clientX - r.left) * W / r.width;
-  const y = (e.clientY - r.top) * H / r.height;
+  const scale = Math.min(r.width / W, r.height / H);
+  const sceneWidth = W * scale;
+  const sceneHeight = H * scale;
+  const offsetX = (r.width - sceneWidth) / 2;
+  const offsetY = (r.height - sceneHeight) / 2;
+  const localX = e.clientX - r.left - offsetX;
+  const localY = e.clientY - r.top - offsetY;
+  if (localX < 0 || localX > sceneWidth || localY < 0 || localY > sceneHeight) return;
+  const x = localX / scale;
+  const y = localY / scale;
   const list = (sceneObjects[game.place] || []).filter(o => !o.when || o.when());
   const near = list.map(o => ({ ...o, d: Math.hypot(o.x - x, o.y - y) })).sort((a, b) => a.d - b.d)[0];
   if (near && near.d < 46) moveTo(near.x, near.y, true);
@@ -395,7 +403,7 @@ function addTouchPad() {
   pad.addEventListener('lostpointercapture', centerStick);
   pad.addEventListener('click', e => e.preventDefault());
 
-  wrap.insertAdjacentElement('afterend', controls);
+  wrap.append(controls);
 }
 
 /* ----------------------------- side panel & menus ----------------------------- */
