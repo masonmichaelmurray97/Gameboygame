@@ -171,6 +171,37 @@ function moveTo(x, y, auto = false) {
   p.auto = auto;
 }
 
+function blockedAt(x, y) {
+  const routes = worldRoutes[game.place] || {};
+  const inExit = y >= 318 && ((routes.west && x <= 8) || (routes.east && x >= W - 8));
+  if (inExit) return false;
+
+  const halfWidth = 7;
+  const halfDepth = 4;
+  return (sceneObstacles[game.place] || []).some(([left, top, right, bottom]) =>
+    x + halfWidth > left && x - halfWidth < right &&
+    y + halfDepth > top && y - halfDepth < bottom
+  );
+}
+
+function tryWalk(p, dx, dy) {
+  const bounds = walkBounds[game.place] || { minY: 20, maxY: 350 };
+  const nextX = Math.max(0, Math.min(W, p.x + dx));
+  const nextY = Math.max(bounds.minY, Math.min(bounds.maxY, p.y + dy));
+  let moved = false;
+
+  // Resolve each axis separately so the player can slide along walls and furniture.
+  if (!blockedAt(nextX, p.y)) {
+    moved = moved || nextX !== p.x;
+    p.x = nextX;
+  }
+  if (!blockedAt(p.x, nextY)) {
+    moved = moved || nextY !== p.y;
+    p.y = nextY;
+  }
+  return moved;
+}
+
 function nearObject() {
   const p = playerPosition();
   const list = (sceneObjects[game.place] || []).filter(o => !o.when || o.when());
